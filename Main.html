@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gomoku Mini-Game</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f4f4f9;
+  }
+  canvas {
+    border: 2px solid #333;
+    background-color: #fff;
+  }
+  .info {
+    position: absolute;
+    top: 10px;
+    text-align: center;
+    width: 100%;
+    font-family: 'Courier New', monospace; /* Changed font */
+    font-size: 20px;
+  }
+</style>
+</head>
+<body>
+<div class="info">
+  <h2>Gomoku Mini-Game</h2>
+  <p id="status">Black's turn</p>
+</div>
+<canvas id="board" width="500" height="500"></canvas>
+<audio id="placeSound" src="stone_place.mp3" preload="auto"></audio> <!-- Add audio element -->
+
+<script>
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const gridSize = 15; // 15x15 board
+const cellSize = canvas.width / gridSize;
+
+let board = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+let currentPlayer = 'black'; // 'black' or 'gray'
+let gameOver = false;
+const placeSound = document.getElementById('placeSound'); // Get audio element
+
+// Draw the Gomoku board grid
+function drawBoard() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#333';
+  for (let i = 0; i <= gridSize; i++) {
+    // Vertical lines
+    ctx.beginPath();
+    ctx.moveTo(i * cellSize, 0);
+    ctx.lineTo(i * cellSize, canvas.height);
+    ctx.stroke();
+
+    // Horizontal lines
+    ctx.beginPath();
+    ctx.moveTo(0, i * cellSize);
+    ctx.lineTo(canvas.width, i * cellSize);
+    ctx.stroke();
+  }
+}
+
+// Draw a stone on the board
+function drawStone(x, y, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(
+    x * cellSize + cellSize / 2,
+    y * cellSize + cellSize / 2,
+    cellSize / 2 - 2,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+}
+
+// Check if the current move wins the game
+function checkWin(x, y, player) {
+  const directions = [
+    { dx: 1, dy: 0 },  // Horizontal
+    { dx: 0, dy: 1 },  // Vertical
+    { dx: 1, dy: 1 },  // Diagonal down-right
+    { dx: 1, dy: -1 }  // Diagonal up-right
+  ];
+
+  for (let { dx, dy } of directions) {
+    let count = 1;
+    for (let step = 1; step < 5; step++) {
+      let nx = x + step * dx;
+      let ny = y + step * dy;
+      if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && board[ny][nx] === player) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    for (let step = 1; step < 5; step++) {
+      let nx = x - step * dx;
+      let ny = y - step * dy;
+      if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && board[ny][nx] === player) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    if (count >= 5) return true;
+  }
+  return false;
+}
+
+// Handle click events on the board
+canvas.addEventListener('click', (e) => {
+  if (gameOver) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / cellSize);
+  const y = Math.floor((e.clientY - rect.top) / cellSize);
+
+  if (board[y][x]) return; // Already occupied
+
+  board[y][x] = currentPlayer;
+  drawStone(x, y, currentPlayer);
+  placeSound.play(); // Play sound effect
+
+  if (checkWin(x, y, currentPlayer)) {
+    document.getElementById('status').textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)} wins!`;
+    gameOver = true;
+    return;
+  }
+
+  currentPlayer = currentPlayer === 'black' ? 'gray' : 'black';
+  document.getElementById('status').textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}'s turn`;
+});
+
+// Initialize the game
+drawBoard();
+</script>
+</body>
+</html>
